@@ -9,6 +9,7 @@ import ins_module.utils as utils
 from sensor_msgs.msg import Imu
 from carla_msgs.msg import CarlaEgoVehicleStatus
 from ins_module.KalmanFilter import ESKF
+from threading import Lock
 
 class IMUParam(object):
     def __init__(self, config) -> None:
@@ -58,6 +59,7 @@ class State(object):
         self.Gx_comped = 0
         self.vehicle_pitch = 0
         self.T_Odom = -1
+        self.state_lock = Lock()
 
     def initAttitude(self, imu_buffer, imu_param:IMUParam):
         self.MemoInitData = np.average(imu_buffer,axis=0)
@@ -181,7 +183,7 @@ class INS(object):
         self.current_measure[6] = (1-self.state.Sg[2]) * (self.current_measure[6] - self.state.Bg[2])
     
     """
-    Implementation of Inertial Navigation System(INS), reference Shin, E.-H. "Estimation techniques for low-cost inertial navigation"
+    Implementation of Inertial Navigation System(INS), reference Shin, E.-H. "Estimation techniques for low-cost inertial navigation". UCGE report, 2005.
     states expressed in navigation frame
     """
     def InertialImplNavFrame(self):
@@ -190,12 +192,16 @@ class INS(object):
         Gzeta = np.cross(self.state.pre_measure_dt[-3:].flatten(), gyro_dt)
         Gzeta = gyro_dt + Gzeta/12.0
         v = np.linalg.norm(Gzeta,ord=2) # check whether matrix norm or vector norm
+        quat_temp = None
         if v > 1e-12:
             quat_dt = quaternion.from_rotation_vector(Gzeta.flatten())
-            quat_temp = quat_dt * self.state.Q_bn # check quaternion multiplication
-            self.state.Q_bn = quat_temp
-            self.state.C_bn = quaternion.as_rotation_matrix(self.state.Q_bn)
-            self.state.attitude = Rotation.from_matrix(self.state.C_bn).as_euler(seq='ZYX')
+            quat_dt = np.normalized(quat_dt)
+            quat_temp = self.state.Q_bn * quat_dt  # check quaternion multiplication
+            quat_temp = np.normalized(quat_temp)
+            with self.state.state_lock:
+                self.state.Q_bn = quat_temp
+                self.state.C_bn = quaternion.as_rotation_matrix(self.state.Q_bn)
+                self.state.attitude = Rotation.from_matrix(self.state.C_bn).as_euler(seq='ZYX')
 
         # velocity update, equation 2.48
         acc_dt = 0.5*(self.buffer[-1,1:4]+self.buffer[-2,1:4]) * self.state.dt # Delta v{f,k}^{b}
@@ -211,11 +217,12 @@ class INS(object):
         an_hat -= self.state.gravity * self.state.dt
 
         # update position
-        self.state.pos += self.state.vel * self.state.dt + 0.5 * an_hat * self.state.dt
-        self.state.vel += an_hat
-
+        with self.state.state_lock:
+            self.state.pos += self.state.vel * self.state.dt + 0.5 * an_hat * self.state.dt
+            self.state.vel += an_hat
+            rospy.loginfo("INS estimation: speed {}, quaternion {}\n".format(self.state.vel.T,  self.state.Q_bn))
         self.state.pre_measure_dt = np.block([acc_dt,gyro_dt])
-        rospy.loginfo_throttle(1,"INS estimation: speed {}, attitude {}\n".format(self.state.vel.T,  self.state.attitude.T))
+        
 
 
     def EKF_Predict(self):
@@ -238,7 +245,6 @@ class INS(object):
         K = self.kalman_filter.update(inno, H)
         dx = K @ inno
         self.state.states += dx
-        rospy.loginfo("delta x: {}\n".format(np.array2string(dx.flatten(),max_line_width=np.inf, threshold=np.inf)))
 
         self.state.filter_update += 3
 
@@ -302,22 +308,29 @@ class INS(object):
 
 
     def stateFeedback(self):
-        self.state.pos += self.state.states[0:3]
-        self.state.vel += self.state.states[3:6]
 
-        # Delta_rotation = Rotation.from_rotvec(self.state.states[6:9].flatten())
-        # Delta_quat = quaternion.from_rotation_matrix(Delta_rotation.as_matrix())
-        # self.state.C_bn = Rotation.from_quat(self.state.Q_bn).as_matrix()
-        delta_quat = quaternion.from_rotation_vector(self.state.states[6:9].flatten())
-        # self.state.Q_bn = Delta_quat * self.state.Q_bn
-        # self.state.Q_bn = self.state.Q_bn * delta_quat
-        # self.state.attitude = Rotation.from_matrix(quaternion.as_rotation_matrix(self.state.Q_bn)).as_euler("ZYX")
-        # self.state.C_bn = quaternion.as_rotation_matrix(self.state.Q_bn)
-        self.state.Bg += self.state.states[9:12]
-        self.state.Ba += self.state.states[12:15]
-        self.state.Sg += self.state.states[15:18]
-        self.state.Sa += self.state.states[18:21]
-        self.state.states = np.zeros((self.state.state_size,1))
+        delta_quat = quaternion.from_rotation_vector(self.state.states[6:9].flatten() * self.state.dt)
+        delta_quat = np.normalized(delta_quat)
+        with self.state.state_lock:
+            rospy.loginfo("delta x: {}\n".format(np.array2string(self.state.states.flatten(),max_line_width=np.inf, threshold=np.inf)))
+            self.state.pos += self.state.states[0:3]
+            self.state.vel += self.state.states[3:6]
+            if np.linalg.norm(self.state.states[6:9].flatten(),ord=2) > 1e-12:
+                self.state.Q_bn = self.state.Q_bn * delta_quat
+                self.state.Q_bn = np.normalized(self.state.Q_bn)
+                # "ZYX" follow the ROS rotation convention
+                self.state.attitude = Rotation.from_matrix(quaternion.as_rotation_matrix(self.state.Q_bn)).as_euler("ZYX") 
+                self.state.C_bn = quaternion.as_rotation_matrix(self.state.Q_bn)
+                # rotation error term is neglected
+                # G = np.identity(3) - utils.skewMatrix(0.5*self.state.states[6:9].flatten())
+                # Ptt = self.kalman_filter.P[6:9,6:9]
+                # self.kalman_filter.P[6:9,6:9] = G @ Ptt @ G.T
+
+            self.state.Ba += self.state.states[9:12]
+            self.state.Bg += self.state.states[12:15]
+            self.state.Sa += self.state.states[15:18]
+            self.state.Sg += self.state.states[18:21]
+            self.state.states = np.zeros((self.state.state_size,1))
         self.state.filter_update = 0
 
     def imuCallback(self, msg):
@@ -349,8 +362,7 @@ class INS(object):
                 # EKF predict
                 self.EKF_Predict()
                 # self.getVelocity()
-                # # odom update
-                # self.NHCUpdate()
+                # # states update
                 if self.state.filter_update >= 1:
                     self.stateFeedback()
         self.imu_count += 1

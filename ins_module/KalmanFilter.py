@@ -1,6 +1,7 @@
 from ins_module.utils import skewMatrix
 import numpy as np
 import rospy
+import quaternion
 """
 Base class for kalman filter
 """
@@ -50,12 +51,13 @@ class ESKF(KalmanFilter):
         super().__init__(state_size, inno_size)
         
     def transition_matrix(self, states, acc: np.ndarray, gyro: np.ndarray):
-        Fx = np.zeros((self.state_size,self.state_size))
-        Fx[0:3,3:6] = np.identity(3)
-        Fx[3:6,6:9] = -states.C_bn @ skewMatrix(acc.flatten())
-        Fx[3:6,9:12] = -states.C_bn
-        Fx[6:9,6:9] = -states.C_bn @ skewMatrix(gyro.flatten())
-        Fx[6:9, 12:15] = -np.identity(3)
-        Fx = np.identity(self.state_size) + states.dt * Fx
+        Fx = np.identity(self.state_size)
+        Fx[0:3,3:6] = np.identity(3) * states.dt
+        Fx[3:6,6:9] = -states.C_bn @ skewMatrix(acc.flatten()) * states.dt
+        Fx[3:6,9:12] = -states.C_bn * states.dt
+        delta_gyro = gyro * states.dt
+        delta_quat = quaternion.from_rotation_vector(delta_gyro)
+        Fx[6:9,6:9] = quaternion.as_rotation_matrix(delta_quat).T
+        Fx[6:9,12:15] = -np.identity(3) * states.dt
         return Fx
 

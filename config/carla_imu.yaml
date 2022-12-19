@@ -14,13 +14,13 @@ imu:
     cols: 3
     dt: d
     data: [0.0, 0.0, 0.0]
-  correlation_time: 1
+  correlation_time: 20.0
   std_bg: 1.0e-3
   std_ba: 1.0e-2
   std_sg: 1.0e-3
   std_sa: 1.0e-4
-  ARW: 1.0e-2
-  VRW: 1.0e-1
+  ARW: 1.0e-3
+  VRW: 1.0e-2
   init_yaw: 1.5707963267948966
 
 init_pos: !!opencv-matrix
@@ -46,7 +46,7 @@ odom_std: !!opencv-matrix
   rows: 3
   cols: 1
   dt: d
-  data: [1.0e-4, 1.0e-4, 1.0e-4]
+  data: [1.0e-2, 1.0e-2, 1.0e-2]
 
 wheel_lever_arm: !!opencv-matrix
   rows: 3

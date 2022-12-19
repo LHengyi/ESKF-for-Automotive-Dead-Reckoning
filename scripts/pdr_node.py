@@ -17,7 +17,8 @@ def broadcastTF(event,state:State):
     rotation = np.identity(4)
     rotation[0:3,0:3] = state.C_bn
     br.sendTransform(state.pos,
-                     tf.transformations.quaternion_from_matrix(rotation),
+                    [state.Q_bn.x, state.Q_bn.y, state.Q_bn.z, state.Q_bn.w],
+                    #  tf.transformations.quaternion_from_matrix(rotation),
                      rospy.Time.now(),
                      "imu_link",
                      "map")
