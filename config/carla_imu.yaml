@@ -1,0 +1,57 @@
+%YAML:1.0
+
+#----------------------------------------------------------------------------------
+# IMU parameters. Sensor bias is modeled by gaussian markov process, correlation time should be
+# obtained from ASD plot or tuned at least.
+# std_bg,std_ba, std_sg, std_sa, sigma of gyro bias, acc bias, gyro scale factor, acc scale factor
+# ARW: attitude random walk, VRW: velocity random walk
+#----------------------------------------------------------------------------------
+imu:
+  name: "gazebo_imu"
+  frequency: 20.0
+  misalignment: !!opencv-matrix
+    rows: 1
+    cols: 3
+    dt: d
+    data: [0.0, 0.0, 0.0]
+  correlation_time: 1
+  std_bg: 1.0e-3
+  std_ba: 1.0e-2
+  std_sg: 1.0e-3
+  std_sa: 1.0e-4
+  ARW: 1.0e-2
+  VRW: 1.0e-1
+  init_yaw: 1.5707963267948966
+
+init_pos: !!opencv-matrix
+  rows: 3
+  cols: 1
+  dt: d
+  data: [0.0, 0.0, 0.0]
+
+gravity: !!opencv-matrix
+  rows: 3
+  cols: 1
+  dt: d
+  data: [0.0, 0.0, 9.8]
+
+wheel:
+  radius: 0.09
+
+use_wheel_odom: false
+
+odom_dt: 0.1
+
+odom_std: !!opencv-matrix
+  rows: 3
+  cols: 1
+  dt: d
+  data: [1.0e-4, 1.0e-4, 1.0e-4]
+
+wheel_lever_arm: !!opencv-matrix
+  rows: 3
+  cols: 1
+  dt: d
+  data: [0.0, 0.0, 0.0]
+
+yaw_bv: 0
