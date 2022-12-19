@@ -14,16 +14,18 @@ git clone https://github.com/LHengyi/ESKF-for-Automotive-Dead-Reckoning.git
 ```
 * Build  
 ```bash
-    catkin_make  
+catkin_make  
 ``` 
 * To run   
 ```bash
-    roslaunch automotive_dead_reckoning carla_localization_ad_rosbridge.launch  
+roslaunch automotive_dead_reckoning carla_localization_ad_rosbridge.launch  
 ```
 in another terminal  
 ```bash
-    roslaunch automotive_dead_reckoning wheel_ins.launch  
+roslaunch automotive_dead_reckoning wheel_ins.launch  
 ```
 ## Demonstration
 <!-- [Demo video](http:youtube) -->
-<img src="image/carla_localization.gif" width="50%" height="50%"/>
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=YOUTUBE_VIDEO_ID_HERE
+" target="_blank"><img src="image/carla_sim.png" 
+alt="IMAGE ALT TEXT HERE" width="60%" height="60%"/></a>

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(wheel_ins)
+project(automotive_dead_reckoning)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -192,6 +192,8 @@ catkin_install_python(PROGRAMS
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
+  # Install launch files.
+  install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
 
 #############
 ## Testing ##
