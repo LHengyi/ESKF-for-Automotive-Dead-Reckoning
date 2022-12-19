@@ -1,7 +1,7 @@
 # Demo: Carla Simulation of automotive Dead Recking Based-on Error State Kalman Filter
 In this demo, a Kalman filter is applied to track the pose of an automotive. IMU data and speed information[^1] are collected through Carla rosbridge. In the update step, the speed measurement is used to update the states. Moreover, non-holonomic constraints are applied.
 
-[^1] In practice, vehicle speed information can be obtained through on-board interface, visual odometry or even by binding an IMU on a non-steering wheel.
+[^1]: In practice, vehicle speed information can be obtained through on-board interface, visual odometry or even by binding an IMU on a non-steering wheel.
 
 ## Prerequisite
 * Linux and ROS (has been test on Ubuntu 20.04 with ROS Noetic).
