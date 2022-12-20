@@ -5,7 +5,7 @@ In this demo, a Kalman filter is applied to track the pose of an automotive. IMU
 
 ## Prerequisite
 * Linux and ROS (has been test on Ubuntu 20.04 with ROS Noetic).
-* [Carla Simulator](http://carla.readthedocs.io/en/latest/start_quickstart/) and [Carla rosbridge](https://carla.readthedocs.io/en/0.9.10/ros_installation/)
+* [Carla Simulator](http://carla.readthedocs.io/en/latest/start_quickstart/) and [Carla rosbridge](https://carla.readthedocs.io/en/0.9.10/ros_installation/). Make sure your Python can find carla package, Python 3.7 is recommended.
 ## Build
 * First, clone into you catkin workspace  
 ```bash
