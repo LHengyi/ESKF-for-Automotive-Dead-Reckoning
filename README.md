@@ -16,7 +16,12 @@ git clone https://github.com/LHengyi/ESKF-for-Automotive-Dead-Reckoning.git
 ```bash
 catkin_make  
 ``` 
-* To run   
+* To run  
+start Carla server  
+```bash
+CarlaUE4.sh
+```
+
 ```bash
 roslaunch automotive_dead_reckoning carla_localization_ad_rosbridge.launch  
 ```
