@@ -31,5 +31,5 @@ roslaunch automotive_dead_reckoning wheel_ins.launch
 ```
 ## Demonstration
 <!-- [Demo video](http:youtube) -->
-<a href="https://www.youtube.com/watch?v=wZ1jl1-vuJU" target="_blank"><img src="image/carla_sim.png" 
+<a href="https://www.youtube.com/watch?v=wZ1jl1-vuJU" target="_blank"><img src="image/carla_localization.gif" 
 alt="IMAGE ALT TEXT HERE" width="60%" height="60%"/></a>
